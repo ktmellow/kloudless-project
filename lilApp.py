@@ -1,14 +1,13 @@
-#note to self: hardcode the app id, but not the key 
-
-from flask import Flask, flash, redirect, render_template, request, session, abort
+from flask import Flask, flash, redirect, render_template, request, session, abort, make_response
+import urllib
 
 app = Flask(__name__)
 
+APP_ID = 'Y9zKGOVamfBLiBhCPvoFRKMupn3H5Trxh_4ThDd__OG4Zy7g'
+
 @app.route("/")
 def index():
-    # authenticate with js stuff, also ask for storage and app id 
 	#Kloudless.authenticator(element, params, callback);
-	# find how to submit search word(s)
     # api search 
 	# return a link or something 	
 	return render_template("myTemplate.html")
@@ -16,27 +15,28 @@ def index():
 @app.route('/', methods=['POST'])
 def my_form_post():
     service = request.form['text2'] 
-    #return redirect("https://api.kloudless.com/services/?app_id=Y9zKGOVamfBLiBhCPvoFRKMupn3H5Trxh_4ThDd__OG4Zy7g&callback=http%3A%2F%2Flocalhost%3A5000%2Fnext%2Fcallback&search="+search+"&services="+service, 302)
-    #return redirect("https://api.kloudless.com/services/?app_id=Y9zKGOVamfBLiBhCPvoFRKMupn3H5Trxh_4ThDd__OG4Zy7g&callback=http%3A%2F%2Flocalhost%3A5000%2Fnext%2Fcallback%2F"+"&search="+search+"&services="+service, 302)
-	#ampersand search term as url query to remember it
-    return redirect("https://api.kloudless.com/services/?app_id=Y9zKGOVamfBLiBhCPvoFRKMupn3H5Trxh_4ThDd__OG4Zy7g&callback=http%3A%2F%2Flocalhost%3A5000%2Fnext%2Fcallback&services="+service, 302)
-
+    search = request.form['text3']
+    query_params = {
+    	'callback': "http://localhost:5000/next/callback/?search=%s" % search,
+    	'app_id': APP_ID
+    }
+    #redirect_url = "https://api.kloudless.com/services/%s?%s" % (service, urllib.urlencode(query_params))
+    redirect_url = "https://api.kloudless.com/services/%s?%s" % (service, urllib.urlencode(query_params))
+    #resp = make_response(redirect("https://api.kloudless.com/services/?app_id=Y9zKGOVamfBLiBhCPvoFRKMupn3H5Trxh_4ThDd__OG4Zy7g&callback=http%3A%2F%2Flocalhost%3A5000%2Fnext%2Fcallback"+"%3F"+search+"%3D"+search+"%26services%3D"+service, 302))
+    #resp.set_cookie('search', 'search')
+    #return resp
+    return redirect(redirect_url, 302)
 
 @app.route("/next/callback/")	
 def next():
-    return render_template("nextTemplate.html")
-
-@app.route("/next/callback/", methods=['POST'])
-def next_form():
+	#search=request.cookies.get('search')
+	#service=request.cookies.get('service')
+	search = request.args['search']
+	service = request.args['service']
+	return render_template("nextTemplate.html", search=search, service=service)
 # use account id from callback URL	
 # https://api.kloudless.com:443/v0/accounts/86879941/search/?q=Pics
 # need to authorize first with API Key!
-# how to prevent losing URL parameters??  
-    search = request.form['text3'] 
-    return "Your \'" + search + "\' is located here: <link>"	
-	
-	
 	
 if __name__ == "__main__":
 	app.run(debug=True)
-
